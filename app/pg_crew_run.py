@@ -210,6 +210,22 @@ class PageCrewRun:
             return serialized
         return str(result)
 
+    def get_result_tasks_output(self, result):
+        """Return task outputs from live, serialized, or error results."""
+        if not isinstance(result, dict):
+            return []
+
+        raw_result = result.get("result")
+        if hasattr(raw_result, "tasks_output"):
+            return raw_result.tasks_output or []
+        if isinstance(raw_result, dict):
+            tasks_output = raw_result.get("tasks_output")
+            if tasks_output:
+                return tasks_output
+
+        tasks_output = result.get("tasks_output")
+        return tasks_output or []
+
     def display_result(self):
         if ss.running and ss.page != "Kickoff!":
             ss.page = "Kickoff!"
@@ -280,12 +296,11 @@ class PageCrewRun:
                 # Always define curr_crew before use
                 curr_crew = self.get_mycrew_by_name(ss.selected_crew_name)
                 task_list = curr_crew.tasks if curr_crew else None
-                tasks_result = get_tasks_outputs_str(
-                    ss.result["result"].tasks_output,
-                    task_list
-                )
+                tasks_output = self.get_result_tasks_output(ss.result)
+                tasks_result = get_tasks_outputs_str(tasks_output, task_list) if tasks_output else ""
                 formatted_tasks_result = format_result(tasks_result)
-                st.expander(t("crew_run.tasks_results"), expanded=False).write(formatted_tasks_result)
+                if formatted_tasks_result:
+                    st.expander(t("crew_run.tasks_results"), expanded=False).write(formatted_tasks_result)
 
                 # Add print button
                 # FIXED: Also use the relevant placeholders for the printable view
