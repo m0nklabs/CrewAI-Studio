@@ -18,6 +18,7 @@ app/tools/__pycache__
 app/tools/__pycache__/*
 data
 data/*
+kyber-imports/
 db/
 db/*
 stop_venv.bat
