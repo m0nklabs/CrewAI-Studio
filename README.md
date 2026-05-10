@@ -158,6 +158,14 @@ docker-compose up --build
 
 Before running the application, ensure you update the `.env` file with your API keys and other necessary configurations. An example `.env` file is provided for reference.
 
+### OpenRouter and Guardian providers
+
+This fork includes dedicated provider entries for OpenRouter and Guardian so a single crew can mix paid cloud escalation models with local Guardian-hosted workers.
+
+- `OPENROUTER_API_KEY`, `OPENROUTER_API_BASE`, and `OPENROUTER_MODELS` configure cloud models.
+- `GUARDIAN_API_KEY`, `GUARDIAN_API_BASE`, and `GUARDIAN_MODELS` configure local OpenAI-compatible Guardian models.
+- Docker Compose maps `host.docker.internal` to the Linux host so Guardian at `http://host.docker.internal:11434/v1` works from the Streamlit container.
+
 ## Troubleshooting
 In case of problems:
 - Delete the `venv/miniconda` folder and reinstall `crewai-studio`.

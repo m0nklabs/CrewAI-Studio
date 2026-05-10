@@ -8,6 +8,13 @@ from crewai import LLM
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from litellm import completion
 
+load_dotenv(override=True)
+
+
+def split_models(value, fallback=None):
+    models = [model.strip() for model in (value or "").split(",") if model.strip()]
+    return models or list(fallback or [])
+
 def load_secrets_fron_env():
     load_dotenv(override=True)
     if "env_vars" not in st.session_state:
@@ -19,6 +26,10 @@ def load_secrets_fron_env():
             "ANTHROPIC_API_KEY": os.getenv("ANTHROPIC_API_KEY"),
             "OLLAMA_HOST": os.getenv("OLLAMA_HOST"),
             "XAI_API_KEY": os.getenv("XAI_API_KEY"),
+            "OPENROUTER_API_KEY": os.getenv("OPENROUTER_API_KEY"),
+            "OPENROUTER_API_BASE": os.getenv("OPENROUTER_API_BASE", "https://openrouter.ai/api/v1"),
+            "GUARDIAN_API_KEY": os.getenv("GUARDIAN_API_KEY", "sk-guardian-local"),
+            "GUARDIAN_API_BASE": os.getenv("GUARDIAN_API_BASE", "http://localhost:11434/v1"),
         }
     else:
         st.session_state.env_vars = st.session_state.env_vars
@@ -51,6 +62,29 @@ def create_openai_llm(model, temperature):
         return LLM(model=model, temperature=temperature, base_url=api_base)
     else:
         raise ValueError("OpenAI API key not set in .env file")
+
+def create_openrouter_llm(model, temperature):
+    api_key = st.session_state.env_vars.get("OPENROUTER_API_KEY")
+    api_base = st.session_state.env_vars.get("OPENROUTER_API_BASE", "https://openrouter.ai/api/v1")
+
+    if not api_key:
+        raise ValueError("OPENROUTER_API_KEY must be set in .env file")
+
+    switch_environment({
+        "OPENAI_API_KEY": api_key,
+        "OPENAI_API_BASE": api_base,
+    })
+    return LLM(model=model, temperature=temperature, api_key=api_key, base_url=api_base)
+
+def create_guardian_llm(model, temperature):
+    api_key = st.session_state.env_vars.get("GUARDIAN_API_KEY") or "sk-guardian-local"
+    api_base = st.session_state.env_vars.get("GUARDIAN_API_BASE") or "http://localhost:11434/v1"
+
+    switch_environment({
+        "OPENAI_API_KEY": api_key,
+        "OPENAI_API_BASE": api_base,
+    })
+    return LLM(model=model, temperature=temperature, api_key=api_key, base_url=api_base)
 
 def create_anthropic_llm(model, temperature):
     switch_environment({
@@ -129,15 +163,33 @@ def create_lmstudio_llm(model, temperature):
 
 LLM_CONFIG = {
     "OpenAI": {
-        "models": os.getenv("OPENAI_PROXY_MODELS", "").split(",") if os.getenv("OPENAI_PROXY_MODELS") else ["gpt-4.1-mini","gpt-4o-mini", "gpt-4o", "gpt-5-mini", "gpt-5-nano"],
+        "models": split_models(os.getenv("OPENAI_PROXY_MODELS"), ["gpt-4.1-mini", "gpt-4o-mini", "gpt-4o", "gpt-5-mini", "gpt-5-nano"]),
         "create_llm": create_openai_llm,
+    },
+    "OpenRouter": {
+        "models": split_models(os.getenv("OPENROUTER_MODELS"), [
+            "deepseek/deepseek-v4-pro",
+            "deepseek/deepseek-v4-flash",
+            "google/gemini-3.1-pro-preview-customtools",
+            "moonshotai/kimi-k2.6",
+            "anthropic/claude-opus-4.7",
+        ]),
+        "create_llm": create_openrouter_llm,
+    },
+    "Guardian": {
+        "models": split_models(os.getenv("GUARDIAN_MODELS"), [
+            "gemma4-26b-agent",
+            "qwen3-35b-reasoning-agent",
+            "qwen3-35b-uncensored",
+        ]),
+        "create_llm": create_guardian_llm,
     },
     "Groq": {
         "models": ["groq/llama3-8b-8192", "groq/llama3-70b-8192", "groq/mixtral-8x7b-32768"],
         "create_llm": create_groq_llm,
     },
     "Ollama": {
-        "models": os.getenv("OLLAMA_MODELS", "").split(",") if os.getenv("OLLAMA_MODELS") else [],
+        "models": split_models(os.getenv("OLLAMA_MODELS")),
         "create_llm": create_ollama_llm,
     },
     "Anthropic": {

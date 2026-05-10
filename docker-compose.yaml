@@ -3,7 +3,7 @@ version: '3.9'
 services:
   db:
     image: postgres:15
-    container_name: crewai_db
+    container_name: ${CREWAI_STUDIO_DB_CONTAINER:-crewai_db}
     env_file:
       - .env
     environment:
@@ -13,22 +13,24 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "127.0.0.1:${CREWAI_STUDIO_DB_PORT:-5432}:5432"
 
   # The Streamlit app
   web:
     build: .
-    container_name: crewai_studio
+    container_name: ${CREWAI_STUDIO_WEB_CONTAINER:-crewai_studio}
     depends_on:
       - db
     env_file:
       - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     # environment:
       # DB_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       # - DB_URL=postgresql://crewai_user:secret@db:5432/crewai
       # - DB_URL=${DB_URL}
     ports:
-      - "8501:8501"
+      - "0.0.0.0:${CREWAI_STUDIO_PORT:-8501}:8501"
 
 volumes:
   db-data:
