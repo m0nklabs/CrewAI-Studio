@@ -233,8 +233,10 @@ def delete_crew(crew_id):
     delete_entity('crew', crew_id)
 
 def save_tool(tool):
+    from my_tools import TOOL_CLASSES
+    tool_key = next((k for k, v in TOOL_CLASSES.items() if type(tool) == v), tool.name)
     data = {
-        'name': tool.name,
+        'name': tool_key,
         'description': tool.description,
         'parameters': tool.get_parameters()
     }

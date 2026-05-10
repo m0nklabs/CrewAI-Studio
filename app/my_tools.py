@@ -6,6 +6,7 @@ from tools.CSVSearchToolEnhanced import CSVSearchToolEnhanced
 from tools.CustomApiTool import CustomApiTool
 from tools.CustomCodeInterpreterTool import CustomCodeInterpreterTool
 from tools.CustomFileWriteTool import CustomFileWriteTool
+from tools.GitHubRepoSearchTool import GitHubRepoSearchTool
 from tools.ScrapeWebsiteToolEnhanced import ScrapeWebsiteToolEnhanced
 from tools.ScrapflyScrapeWebsiteTool import ScrapflyScrapeWebsiteTool
 
@@ -172,16 +173,26 @@ class MyGithubSearchTool(MyTool):
     def __init__(self, tool_id=None, github_repo=None, gh_token=None, content_types=None):
         parameters = {
             'github_repo': {'mandatory': False},
-            'gh_token': {'mandatory': True},
+            'gh_token': {'mandatory': False},
             'content_types': {'mandatory': False}
         }
         super().__init__(tool_id, t('tool.github_search'), t('tool.github_search_desc'), parameters, github_repo=github_repo, gh_token=gh_token, content_types=content_types)
 
-    def create_tool(self) -> GithubSearchTool:
-        return GithubSearchTool(
+    def create_tool(self) -> GitHubRepoSearchTool:
+        gh_token = self.parameters.get('gh_token') or os.getenv('GITHUB_TOKEN') or os.getenv('GH_TOKEN')
+        if not gh_token:
+            raise ValueError("GitHub token not provided and neither GITHUB_TOKEN nor GH_TOKEN is set")
+
+        content_types = self.parameters.get('content_types')
+        if isinstance(content_types, str):
+            content_types = [item.strip() for item in content_types.split(",") if item.strip()]
+        if not content_types:
+            content_types = ["code", "repo", "pr", "issue"]
+
+        return GitHubRepoSearchTool(
             github_repo=self.parameters.get('github_repo') if self.parameters.get('github_repo') else None,
-            gh_token=self.parameters.get('gh_token'),
-            content_types=self.parameters.get('search_query').split(",") if self.parameters.get('search_query') else ["code", "repo", "pr", "issue"]
+            gh_token=gh_token,
+            content_types=content_types
         )
 
 class MyJSONSearchTool(MyTool):

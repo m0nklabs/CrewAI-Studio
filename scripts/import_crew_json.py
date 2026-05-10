@@ -63,6 +63,19 @@ def crew_to_entities(crew: dict[str, Any]) -> list[tuple[str, str, dict[str, Any
     """Convert one CrewAI-Studio crew export into database entity rows."""
     entities: list[tuple[str, str, dict[str, Any]]] = []
 
+    for tool in crew.get("tools", []):
+        entities.append(
+            (
+                tool["tool_id"],
+                "tool",
+                {
+                    "name": tool["name"],
+                    "description": tool.get("description", tool["name"]),
+                    "parameters": tool.get("parameters", {}),
+                },
+            )
+        )
+
     for agent in crew.get("agents", []):
         entities.append(
             (

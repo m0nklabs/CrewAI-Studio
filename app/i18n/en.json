@@ -226,6 +226,8 @@
     "code_docs_search_desc": "A tool that can be used to search through code documentation.",
     "youtube_video_search": "YoutubeVideoSearchTool",
     "youtube_video_search_desc": "A tool that can be used to semantic search a query from a Youtube Video content.",
+    "github_search": "GithubSearchTool",
+    "github_search_desc": "A tool that can be used to search a GitHub repository",
     "serper_dev": "SerperDevTool",
     "serper_dev_desc": "A tool that can be used to search the internet with a search_query",
     "youtube_channel_search": "YoutubeChannelSearchTool",
