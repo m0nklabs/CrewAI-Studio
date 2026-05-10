@@ -76,6 +76,14 @@ class PageCrewRun:
         
         return placeholders
 
+    def collect_inputs_for_crew(self, crew):
+        """Return current Streamlit inputs keyed by the original template variable names."""
+        inputs = {}
+        for placeholder in self.get_placeholders_from_crew(crew):
+            placeholder_key = f'placeholder_{placeholder}'
+            inputs[placeholder] = ss.placeholders.get(placeholder_key, '')
+        return inputs
+
     def run_crew(self, crewai_crew, inputs, message_queue):
         if (str(os.getenv('AGENTOPS_ENABLED')).lower() in ['true', '1']) and not ss.get('agentops_failed', False):
             import agentops
@@ -142,7 +150,7 @@ class PageCrewRun:
 
     def control_buttons(self, selected_crew):
         if st.button(t('crew_run.run_button'), disabled=not selected_crew.is_valid() or ss.running):
-            inputs = {key.split('_')[1]: value for key, value in ss.placeholders.items()}
+            inputs = self.collect_inputs_for_crew(selected_crew)
             ss.result = None
             
             try:
@@ -268,14 +276,14 @@ class PageCrewRun:
                         for placeholder in crew_placeholders:
                             placeholder_key = f'placeholder_{placeholder}'
                             if placeholder_key in ss.placeholders:
-                                relevant_placeholders[placeholder_key] = ss.placeholders[placeholder_key]
+                                relevant_placeholders[placeholder] = ss.placeholders[placeholder_key]
                     
                     # Create a new Result instance with serialized result
                     result = Result(
                         id=f"R_{rnd_id()}",
                         crew_id=ss.selected_crew_name,
                         crew_name=ss.selected_crew_name,
-                        inputs={key.split('_')[1]: value for key, value in relevant_placeholders.items()},
+                        inputs=relevant_placeholders,
                         result=self.serialize_result(ss.result, curr_crew)  # Serialize the result before saving
                     )
                     
