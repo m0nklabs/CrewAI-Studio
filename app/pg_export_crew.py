@@ -95,7 +95,7 @@ Task(
         
         app_content = f"""
 import streamlit as st
-from crewai import Agent, Task, Crew, Process
+from crewai import Agent, Task, Crew, Process, LLM
 from langchain_openai import ChatOpenAI
 from langchain_groq import ChatGroq
 from langchain_anthropic import ChatAnthropic
@@ -129,6 +129,19 @@ def create_openai_llm(model, temperature):
     else:
         raise ValueError("OpenAI API key not set in .env file")
 
+def create_openrouter_llm(model, temperature):
+    api_key = os.getenv('OPENROUTER_API_KEY')
+    api_base = os.getenv('OPENROUTER_API_BASE', 'https://openrouter.ai/api/v1')
+    if api_key:
+        return LLM(model=model, temperature=temperature, api_key=api_key, base_url=api_base)
+    else:
+        raise ValueError("OPENROUTER_API_KEY must be set in .env file")
+
+def create_guardian_llm(model, temperature):
+    api_key = os.getenv('GUARDIAN_API_KEY', 'sk-guardian-local')
+    api_base = os.getenv('GUARDIAN_API_BASE', 'http://localhost:11434/v1')
+    return LLM(model=model, temperature=temperature, api_key=api_key, base_url=api_base)
+
 def create_groq_llm(model, temperature):
     api_key = os.getenv('GROQ_API_KEY')
     if api_key:
@@ -153,6 +166,12 @@ LLM_CONFIG = {{
     "OpenAI": {{
         "create_llm": create_openai_llm
     }},
+    "OpenRouter": {{
+        "create_llm": create_openrouter_llm
+    }},
+    "Guardian": {{
+        "create_llm": create_guardian_llm
+    }},
     "Groq": {{
         "create_llm": create_groq_llm
     }},
@@ -165,7 +184,7 @@ LLM_CONFIG = {{
 }}
 
 def create_llm(provider_and_model, temperature=0.1):
-    provider, model = provider_and_model.split(": ")
+    provider, model = provider_and_model.split(": ", 1)
     create_llm_func = LLM_CONFIG.get(provider, {{}}).get("create_llm")
     if create_llm_func:
         return create_llm_func(model, temperature)
@@ -233,6 +252,10 @@ if __name__ == '__main__':
         env_content = """
 # OPENAI_API_KEY="FILL-IN-YOUR-OPENAI-API-KEY"
 # OPENAI_API_BASE="OPTIONAL-FILL-IN-YOUR-OPENAI-API-BASE"
+# OPENROUTER_API_KEY="FILL-IN-YOUR-OPENROUTER-API-KEY"
+# OPENROUTER_API_BASE="https://openrouter.ai/api/v1"
+# GUARDIAN_API_KEY="sk-guardian-local"
+# GUARDIAN_API_BASE="http://localhost:11434/v1"
 # GROQ_API_KEY="FILL-IN-YOUR-GROQ-API-KEY"
 # ANTHROPIC_API_KEY="FILL-IN-YOUR-ANTHROPIC-API-KEY"
 # LMSTUDIO_API_BASE="http://localhost:1234/v1"
